@@ -16,6 +16,7 @@ int main(void)
     printf("\033[?25l");
 
     char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1]; 
+    int color[SCREEN_HEIGHT][SCREEN_WIDTH];
     
     int running = 1;
     system("cls");
@@ -103,15 +104,15 @@ int main(void)
 
         if (game.won)  
         {
-            render(screen, game.map, game.posX, game.posY, game.dirX, game.dirY, game.planeX, game.planeY);
-            present(screen);
+            render(screen, color, game.map, game.posX, game.posY, game.dirX, game.dirY, game.planeX, game.planeY);
+            present(screen, color);
             system("cls");
             printf("\n*** %s ***\n", game.log);
             break;
         }
 
-        render(screen, game.map, game.posX, game.posY, game.dirX, game.dirY, game.planeX, game.planeY);
-        present(screen);
+        render(screen, color, game.map, game.posX, game.posY, game.dirX, game.dirY, game.planeX, game.planeY);
+        present(screen, color);
         printf("Keys: %d / %d\n", game.key_count, game.total_key);
         printf("%s\n", game.log);
 

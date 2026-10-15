@@ -55,6 +55,8 @@ void cleanup(void)
 
 void enable_escape_char(void)
 {
+    SetConsoleOutputCP(CP_UTF8);
+
 HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
     DWORD mode;
@@ -89,21 +91,59 @@ char readoutputlast(void)
     return ch;
 }
 
-void present(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1])
+void present(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1], int color[SCREEN_HEIGHT][SCREEN_WIDTH])
 {
-    char frame[SCREEN_HEIGHT * (SCREEN_WIDTH + 1) + 16];
+    static char frame[128 * 1024];
     int pos = 0;
 
     pos += sprintf(frame + pos, "\033[H");
 
+    int current_color = -1; // current color
+
     for (int y = 0; y < SCREEN_HEIGHT; y++)
     {
-        pos += sprintf(frame + pos, "%s", screen[y]);
-        if (y < SCREEN_HEIGHT - 1)
+        for (int x = 0; x < SCREEN_WIDTH; x++)
         {
-            frame[pos++] = '\n';
+            int cellColor = color[y][x];
+
+            if (cellColor != current_color)
+            {
+                current_color = cellColor;
+                switch (current_color)
+                {
+                    case COLOR_KEY:
+                        pos += sprintf(frame + pos, "\033[93m"); // Bright Yellow
+                        break;
+                    case COLOR_DOOR:
+                        pos += sprintf(frame + pos, "\033[38;5;130m"); // Wood Brown
+                        break;
+                    case COLOR_PORTAL:
+                        pos += sprintf(frame + pos, "\033[95m"); // Bright Purple / Magenta
+                        break;
+                    case COLOR_WALL:
+                        pos += sprintf(frame + pos, "\033[37m"); // Wall Gray / White
+                        break;
+                    case COLOR_DEFAULT:
+                    default:
+                        pos += sprintf(frame + pos, "\033[0m");  // Reset to default
+                        break;
+                }
+            }
+
+            char ch = screen[y][x];
+            switch (ch)
+            {
+                case '1': pos += sprintf(frame + pos, "█"); break;
+                case '2': pos += sprintf(frame + pos, "▓"); break;
+                case '3': pos += sprintf(frame + pos, "▒"); break;
+                case '4': pos += sprintf(frame + pos, "░"); break;
+                default:  frame[pos++] = ch; break;
+            }
         }
+        frame[pos++] = '\n';
     }
+
+    pos += sprintf(frame + pos, "\033[0m");
     frame[pos] = '\0';
 
     fputs(frame, stdout);
@@ -226,6 +266,7 @@ void render(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1], int map[MAP_HEIGHT][MA
 
 void render(
     char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1],
+    int color[SCREEN_HEIGHT][SCREEN_WIDTH],
     const Map *map,
     double posX, double posY,
     double dirX, double dirY,
@@ -273,7 +314,7 @@ void render(
         // 3. Perform DDA grid traversal
         int hit = 0;
         int side = 0; 
-        int hitTile = 0; // <-- NEW: Stores the kind of tile we hit
+        int hitTile = 0;
 
         while (!hit) {
             if (sideDistX < sideDistY) {
@@ -293,11 +334,11 @@ void render(
             int tile = map->data[mapY * map->width + mapX];
             if (tile > 0) {
                 hit = 1;
-                hitTile = tile; // <-- NEW: Remember the exact tile number (1, 2, 3, or 9)
+                hitTile = tile;
             }
         }
 
-        // 4. Calculate perpendicular distance (avoids fisheye distortion)
+        // 4. Calculate perpendicular distance
         double perpWallDist;
         if (side == 0) {
             perpWallDist = (sideDistX - deltaDistX);
@@ -317,33 +358,47 @@ void render(
 
         // 6. Select character based on what was hit
         char wallChar;
-        if (hitTile == 2) {
-            // Locked Door (vertical bars)
-            wallChar = (side == 1) ? ':' : '|';
-        } else if (hitTile == 3) {
-            // Key (shiny pickup star)
-            wallChar = '*';
-        } else if (hitTile == 9) {
-            // Exit Goal (portal glyph)
-            wallChar = '@';
-        } else {
-            // Normal Wall (Tile 1): Shading based on distance
-            if (perpWallDist < 2.0)      wallChar = '#';
-            else if (perpWallDist < 4.0) wallChar = '%';
-            else if (perpWallDist < 8.0) wallChar = '+';
-            else                          wallChar = '.';
+        int wallColor = COLOR_WALL;
 
-            if (side == 1 && wallChar == '#') wallChar = '%'; 
+        if (hitTile == 2) {
+            // Locked Door
+            wallChar = (side == 1) ? ':' : '|';
+            wallColor = COLOR_DOOR;
+        } else if (hitTile == 3) {
+            // Key
+            wallChar = '*';
+            wallColor = COLOR_KEY;
+        } else if (hitTile == 9) {
+            // Exit Goal
+            wallChar = '@';
+            wallColor = COLOR_PORTAL;
+        } else {
+            // Normal Wall: Distance-based shading tokens
+            if (perpWallDist < 2.0)      wallChar = '1'; // █
+            else if (perpWallDist < 4.0) wallChar = '2'; // ▓
+            else if (perpWallDist < 8.0) wallChar = '3'; // ▒
+            else                          wallChar = '4'; // ░
+
+            // Shadow on Y-side walls for 3D depth
+            if (side == 1) {
+                if (wallChar == '1') wallChar = '2';
+                else if (wallChar == '2') wallChar = '3';
+                else if (wallChar == '3') wallChar = '4';
+            }
+            wallColor = COLOR_WALL;
         }
 
-        // 7. Write ceiling, wall, and floor into screen[y][x]
+        // Step 7: Fill screen and color buffers
         for (int y = 0; y < SCREEN_HEIGHT; y++) {
             if (y < drawStart) {
-                screen[y][x] = ' ';           
+                screen[y][x] = ' ';
+                color[y][x] = COLOR_DEFAULT;
             } else if (y <= drawEnd) {
-                screen[y][x] = wallChar;      
+                screen[y][x] = wallChar;
+                color[y][x] = wallColor;
             } else {
-                screen[y][x] = '.';          
+                screen[y][x] = '.';
+                color[y][x] = COLOR_DEFAULT;
             }
         }
     }

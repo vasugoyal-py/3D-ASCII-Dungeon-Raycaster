@@ -30,11 +30,19 @@ typedef struct {
     const Map *map;
 } GameState;
 
+typedef enum {
+    COLOR_DEFAULT = 0,
+    COLOR_WALL,    // White / Gray
+    COLOR_DOOR,    // Brown
+    COLOR_KEY,     // Yellow
+    COLOR_PORTAL   // Purple
+} Color;
+
 void cleanup(void);
 void enable_escape_char(void);
 char readoutputlast(void);
-void present(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1]);
-void render(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1], const Map *map, double posX, double posY, double dirX, double dirY, double planeX, double planeY);
+void present(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1], int color[SCREEN_HEIGHT][SCREEN_WIDTH]);
+void render(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1], int color[SCREEN_HEIGHT][SCREEN_WIDTH], const Map *map, double posX, double posY, double dirX, double dirY, double planeX, double planeY);
 bool can_move(const Map *map, double newX, double newY);
 bool try_move(GameState *game, double newX, double newY);
 
