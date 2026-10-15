@@ -15,65 +15,42 @@ int main(void)
     atexit(cleanup);
     printf("\033[?25l");
 
-
-    int map[MAP_HEIGHT][MAP_WIDTH] = 
-    {
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1},
-        {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1},
-        {1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1},
-        {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1},
-        {1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1},
-        {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1},
-        {1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-    };
+    char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1]; 
     
-   /*
-    int map[MAP_HEIGHT][MAP_WIDTH] = 
+    int running = 1;
+    system("cls");
+
+    printf("Select a map:\n");
+    int no_of_map = map_count(); // called outside the for loop so the for loop does't call it over and over leading to inefficency
+    for(int i = 0; i < no_of_map; i++)
     {
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
-    };
-    */
-    GameState game = {
-        .posX = 3.0,
-        .posY = 3.0,
-        .dirX = 0.0,
-        .dirY = -1.0,
-        .planeX = 0.66,
-        .planeY = 0.0,
+        const Map *m = get_map(i);
+        printf("%d). %s (%d * %d)\n", i + 1, m->name, m->width, m->height);
+    }
+    printf("Enter: ");
+    int choise = 0;
+    scanf("%d", &choise);
+    choise -= 1;
+    if (choise < 0 || choise >= no_of_map)
+    {
+        return 1;
+    }
+    const Map *select_map = get_map(choise);
+
+    GameState game = 
+    {
+        .posX = select_map->startX,
+        .posY = select_map->startY,
+        .dirX = select_map->dirX,
+        .dirY = select_map->dirY,
+        .planeX = select_map->planeX,
+        .planeY = select_map->planeY,
+        .map = select_map,
         .key = 0,
         .key_count = 0,
         .won = false,
         .log = " "
     };
-
-    char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1]; 
-    
-    int running = 1;
-    system("cls");
 
     while (running != 0)
 {
@@ -89,16 +66,16 @@ int main(void)
             double newY = game.posY + (game.dirY * speed);
             double newX = game.posX + (game.dirX * speed);
 
-            if (can_move(map, newX, game.posY)) game.posX = newX;
-            if (can_move(map, game.posX, newY)) game.posY = newY;
+            if (can_move(game.map, newX, game.posY)) game.posX = newX;
+            if (can_move(game.map, game.posX, newY)) game.posY = newY;
         }
         if (c == 's' || c == 'S')
         {
             double newY = game.posY - (game.dirY * speed);
             double newX = game.posX - (game.dirX * speed);
 
-            if (can_move(map, newX, game.posY)) game.posX = newX;
-            if (can_move(map, game.posX, newY)) game.posY = newY;
+            if (can_move(game.map, newX, game.posY)) game.posX = newX;
+            if (can_move(game.map, game.posX, newY)) game.posY = newY;
         }
         if (c == 'a' || c == 'A')
         {
@@ -124,7 +101,7 @@ int main(void)
         }
     }
 
-    render(screen, map, game.posX, game.posY, game.dirX, game.dirY, game.planeX, game.planeY);
+    render(screen, game.map, game.posX, game.posY, game.dirX, game.dirY, game.planeX, game.planeY);
     present(screen);
 
     Sleep(33);

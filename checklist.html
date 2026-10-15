@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASCII Dungeon 3D – CS50x Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E8EBEF; --surface:#F6F7F9; --ink:#1B2230; --muted:#5B6478; --line:#C3C9D4;
+  --accent:#4B3F9E; --accent-ink:#fff; --done:#2F7D5B; --code:#DDE1E8;
+  --head:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --body:"Atkinson Hyperlegible",system-ui,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171F; --surface:#1C212C; --ink:#E6E9F0; --muted:#9AA3B5; --line:#323A4A;
+    --accent:#A99BFF; --accent-ink:#14171F; --done:#5CC596; --code:#10131A; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171F; --surface:#1C212C; --ink:#E6E9F0; --muted:#9AA3B5; --line:#323A4A;
+  --accent:#A99BFF; --accent-ink:#14171F; --done:#5CC596; --code:#10131A; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:1rem}
+body{margin:0;background:var(--bg);color:var(--ink);font:1rem/1.55 var(--body)}
+.wrap{max-width:880px;margin:0 auto;padding:1.5rem 1rem 4rem}
+header{padding:1rem 0 1.5rem}
+h1{font:700 clamp(1.6rem,5vw,2.4rem)/1.1 var(--head);margin:0 0 .4rem;letter-spacing:-.02em}
+.sub{color:var(--muted);margin:0}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:.75rem 0;border-bottom:1px solid var(--line)}
+.map{display:grid;grid-template-columns:repeat(15,1fr);gap:3px}
+.tile{aspect-ratio:1;min-width:0;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;font:700 .65rem var(--head);color:var(--muted);text-decoration:none;border-radius:2px}
+.tile.done{background:var(--done);border-color:var(--done);color:#fff}
+.tile:focus-visible,button:focus-visible,input:focus-visible+span{outline:3px solid var(--accent);outline-offset:2px}
+.stat{display:flex;justify-content:space-between;align-items:center;margin-top:.6rem;font:500 .85rem var(--head)}
+.tools button{font:inherit;background:none;color:var(--muted);border:1px solid var(--line);padding:.2rem .6rem;border-radius:4px;cursor:pointer;margin-left:.4rem}
+.tools button:hover{color:var(--ink);border-color:var(--ink)}
+section{margin-top:2.2rem}
+h2{font:700 1.2rem/1.2 var(--head);margin:0}
+.goal{color:var(--muted);margin:.2rem 0 1rem}
+article{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:4px;padding:1rem 1.1rem;margin-bottom:.9rem}
+article.done{border-left-color:var(--done)}
+article.done h3{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+.hd{display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.5rem}
+h3{font:700 1rem/1.3 var(--head);margin:0;flex:1 1 14rem}
+.label{font-size:.8rem;color:var(--muted);border:1px solid var(--line);padding:0 .5rem;border-radius:99px;white-space:nowrap}
+.label.must{color:var(--accent);border-color:var(--accent);font-weight:700}
+.count{font:500 .8rem var(--head);color:var(--muted)}
+ul{list-style:none;margin:0;padding:0}
+li label{display:flex;gap:.7rem;align-items:flex-start;padding:.3rem 0;cursor:pointer}
+li input{position:absolute;opacity:0;width:1px;height:1px}
+li .box{flex:none;width:1.25rem;height:1.25rem;margin-top:.15rem;border:2px solid var(--muted);border-radius:3px;display:grid;place-items:center;font:700 .8rem/1 var(--head);color:transparent}
+li input:checked+.box{background:var(--done);border-color:var(--done);color:#fff}
+li input:checked~.txt{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+li ul{margin:0 0 0 1.95rem}
+pre{background:var(--code);border:1px solid var(--line);border-radius:4px;padding:.7rem .9rem;margin:.5rem 0 .3rem 1.95rem;overflow-x:auto;font:500 .82rem/1.5 var(--head)}
+code{font-family:var(--head);font-size:.88em;background:var(--code);padding:.05em .3em;border-radius:3px}
+@media (max-width:560px){.map{grid-template-columns:repeat(8,1fr)}}
+@media print{.top .tools{display:none}.top{position:static}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>ASCII Dungeon 3D</h1>
+  <p class="sub">CS50x final project checklist: raycaster game in C, video demo, README and submission.</p>
+</header>
+<div class="top">
+  <div class="map" id="map" aria-label="Card progress"></div>
+  <div class="stat"><span id="stat"></span><span class="tools"><button id="theme" type="button">Toggle theme</button><button id="reset" type="button">Reset</button></span></div>
+</div>
+<main id="main"></main>
+</div>
+<script>
+const PHASES=[
+{t:"Phase 1: Core engine and gameplay",g:"Turn the camera demo into a fully playable game.",cards:[
+ {t:"Integrate GameState struct and refactor",l:"Code",items:[
+  "Update helper.h with a GameState struct (position, direction, keys, win flag, status message)",
+  "Update main.c to instantiate and initialize the game object",
+  ["Verify everything compiles cleanly with:","gcc main.c helper.c -o game.exe -lm"]]},
+ {t:"Selectable maps (map.h and map.c)",l:"Code",n:"1.5",items:[
+  "Create map.h with a Map struct (name, width, height, tile data, start position and direction) and function prototypes",
+  "Create map.c defining several maps of different shapes and sizes (e.g. 16x16 square, wide rectangle, L-shaped)",
+  "Add map selection: map_count() and get_map(index) in map.c, plus a map menu in main.c before the game starts",
+  "Replace the hardcoded map array in helper.c (raycasting, try_move, mini-map) with the selected Map's width and height, with bounds checks",
+  ["Update the build command and verify every map loads, spawns the player on an open tile and never reads out of bounds:","gcc main.c helper.c map.c -o game.exe -lm"]]},
+ {t:"Interactive tiles and collision (try_move)",l:"Gameplay",items:[
+  "Replace basic can_move() with try_move()",
+  "Tile 3 (Key): collect key, update message, clear tile to 0",
+  "Tile 2 (Locked Door): if game.keys > 0, consume a key and open the door; otherwise block the player",
+  "Tile 9 (Exit): set game.has_won = true"]},
+ {t:"Mini-map overlay",l:"Visuals",items:[
+  "Implement overlay_minimap() in helper.c",
+  "Render a 5x5 area around the player in the top-right corner of screen[][]",
+  "Render the orientation arrow (^, >, v, <) based on dirX and dirY"]},
+ {t:"Heads-up display (HUD) and victory screen",l:"UI",items:[
+  "Set SCREEN_HEIGHT to 22 lines to leave room for the status bar",
+  "Print stats in present(): keys collected, coordinates, action log",
+  "Add the victory screen banner in main.c when the loop exits"]}]},
+{t:"Phase 2: Level design and polish",g:"Make the game fun, responsive and bug-free.",cards:[
+ {t:"Design a fun 16x16 maze",l:"Design",items:[
+  "Place at least 2 keys in dead ends or hidden corridors",
+  "Place 2 locked doors guarding the path to the exit",
+  "Verify there are no unintended shortcuts or impassable soft-locks"]},
+ {t:"Controls and playtesting",l:"Quality assurance",items:[
+  "Test turning speed (ROT_SPEED) and walk speed (SPEED) for smooth movement",
+  "Test collision against all wall angles (no clipping through corners)",
+  "Edge case: pressing against a locked door with 0 keys",
+  "Edge case: exiting with Q cleanly restores the console cursor"]}]},
+{t:"Phase 3: The 3-minute video demo",g:"Meet CS50's mandatory video requirements.",cards:[
+ {t:"Record intro slide",l:"CS50 mandatory",must:1,items:[
+  ["Create a title screen or slide showing:",[
+   "Project title (e.g. \"ASCII Dungeon 3D: A Raycaster Game in C\")",
+   "Your name",
+   "Your GitHub and edX usernames",
+   "Your city and country",
+   "Current date"]]]},
+ {t:"Record gameplay walkthrough (OBS / Windows Game Bar)",l:"Demo",items:[
+  "Start recording: Win + Alt + R (Windows Game Bar) or OBS",
+  "Show the intro slide (5-10 seconds)",
+  "Show 3D raycasting in action, navigating the maze",
+  "Point out the live mini-map updating",
+  "Collect a key and show the HUD message update",
+  "Unlock a door and reach the exit to show the victory screen",
+  "Keep total runtime under 3 minutes"]},
+ {t:"Upload to YouTube",l:"Submission",items:[
+  "Upload the video to YouTube",
+  "Set visibility to Unlisted (or Public). Do NOT select Private",
+  "Copy and save the video URL for the README and the form"]}]},
+{t:"Phase 4: The 750-word README.md",g:"Explain your architecture and design choices in depth.",cards:[
+ {t:"Structure the README.md",l:"Documentation",items:[
+  "Create README.md in the project root",
+  ["Add the required header template:","# ASCII DUNGEON 3D\n#### Video Demo: <YOUR YOUTUBE URL>\n#### Description:"]]},
+ {t:"Write project architecture (~750 words)",l:"Documentation",items:[
+  "Overview: what the project is, inspiration (Wolfenstein 3D), goals",
+  "Math and rendering pipeline: ray direction, DDA stepping, perpendicular wall distance (prevents fisheye distortion)",
+  ["File breakdown:",[
+   "main.c: game loop, keyboard input via _kbhit() and _getch(), victory handling",
+   "helper.c: raycasting math, mini-map rasterization, ANSI screen presentation",
+   "helper.h: game state definitions and function prototypes",
+   "map.c and map.h: map definitions of different shapes and sizes, and map selection"]],
+  ["Design decisions and challenges:",[
+   "Why double-buffered ANSI escape codes (\\033[H) eliminate screen flicker",
+   "How you solved the getch() unsigned char issue",
+   "Windows compatibility (<windows.h>, <conio.h>)"]]]}]},
+{t:"Phase 5: Submission and certificate",g:"Officially graduate CS50x.",cards:[
+ {t:"Fill out the CS50 submission form",l:"CS50 mandatory",must:1,items:[
+  "Open the Google Form link from Step 1 of the instructions",
+  "Submit project title, GitHub username and YouTube video URL"]},
+ {t:"Execute submit50",l:"Terminal",items:[
+  "Open a terminal inside your project directory",
+  "Ensure only main.c, helper.c, helper.h, map.c, map.h and README.md are present",
+  ["Run:","submit50 cs50/problems/2026/x/project"],
+  "Confirm submission completes with 100% green checkmarks"]},
+ {t:"Claim your CS50 certificate",l:"Graduation",items:[
+  "Wait 5-10 minutes",
+  "Log in to cs50.me/cs50x",
+  "Confirm the green banner appears showing Course Completed",
+  "Click the link at the top to download your free CS50x certificate"]}]}
+];
+const KEY="cs50-dungeon-checklist-v2";
+let saved={};
+try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
+const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(e){}};
+const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+let id=0,cardNo=0;const cards=[];
+function list(items,cid){
+  return "<ul>"+items.map(it=>{
+    let txt=it,sub="",pre="";
+    if(Array.isArray(it)){
+      txt=it[0];
+      if(Array.isArray(it[1]))sub=list(it[1],cid);
+      else pre="<pre>"+esc(it[1])+"</pre>";
+    }
+    const k="i"+(id++);
+    cards[cid].keys.push(k);
+    return `<li><label><input type="checkbox" data-k="${k}" data-c="${cid}"${saved[k]?" checked":""}><span class="box" aria-hidden="true">✓</span><span class="txt">${esc(txt)}</span></label>${pre}${sub}</li>`;
+  }).join("")+"</ul>";
+}
+let html="",disp=0;
+PHASES.forEach(p=>{
+  html+=`<section><h2>${esc(p.t)}</h2><p class="goal">${esc(p.g)}</p>`;
+  p.cards.forEach(c=>{
+    const cid=cardNo++;
+    const num=c.n||String(++disp);
+    cards[cid]={keys:[],n:num};
+    const body=list(c.items,cid);
+    html+=`<article id="card${cid+1}" data-card="${cid}"><div class="hd"><h3>Card ${num}: ${esc(c.t)}</h3><span class="label${c.must?" must":""}">${esc(c.l)}</span><span class="count"></span></div>${body}</article>`;
+  });
+  html+="</section>";
+});
+document.getElementById("main").innerHTML=html;
+document.getElementById("map").innerHTML=cards.map((_,i)=>`<a class="tile" href="#card${i+1}" title="Card ${cards[i].n}">${cards[i].n}</a>`).join("");
+function refresh(){
+  let doneCards=0;
+  cards.forEach((c,i)=>{
+    const n=c.keys.filter(k=>saved[k]).length,all=n===c.keys.length;
+    if(all)doneCards++;
+    const a=document.getElementById("card"+(i+1));
+    a.classList.toggle("done",all);
+    a.querySelector(".count").textContent=n+"/"+c.keys.length;
+    document.querySelectorAll(".tile")[i].classList.toggle("done",all);
+  });
+  document.getElementById("stat").textContent=doneCards+" of "+cards.length+" cards complete"+(doneCards===cards.length?". Course completed!":"");
+}
+document.getElementById("main").addEventListener("change",e=>{
+  const k=e.target.dataset.k;if(!k)return;
+  if(e.target.checked)saved[k]=1;else delete saved[k];
+  persist();refresh();
+});
+document.getElementById("reset").onclick=()=>{
+  if(!confirm("Clear all progress?"))return;
+  saved={};persist();
+  document.querySelectorAll("input[type=checkbox]").forEach(i=>i.checked=false);
+  refresh();
+};
+document.getElementById("theme").onclick=()=>{
+  const r=document.documentElement;
+  const dark=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
+  r.dataset.theme=dark?"light":"dark";
+};
+refresh();
+</script>
+</body>
+</html>
