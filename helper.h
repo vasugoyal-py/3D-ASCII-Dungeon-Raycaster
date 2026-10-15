@@ -5,12 +5,12 @@
 #include <stdbool.h>
 #include "map.h"
 
-#define SCREEN_WIDTH 80
-#define SCREEN_HEIGHT 24
+#define SCREEN_WIDTH 150
+#define SCREEN_HEIGHT 40
 #define speed 0.15
 #define rotSpeed 0.10
 #define loglen 500
-typedef struct GameState{
+typedef struct GameState {
     double posX; // Player pos
     double posY;
 
@@ -28,7 +28,7 @@ typedef struct GameState{
     char log[loglen]; // the characters displayed to the screen
 
     const Map *map;
-}GameState;
+} GameState;
 
 void cleanup(void);
 void enable_escape_char(void);
