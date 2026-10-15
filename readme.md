@@ -121,7 +121,7 @@ Movement/rotation and key handling live in `main.c`, using `can_move()` for coll
 
 ## 📄 License
 
-No license is set yet — add one (e.g. MIT) if you plan to share this publicly.
+No license is set yet.
 
 <div align="center">
 
