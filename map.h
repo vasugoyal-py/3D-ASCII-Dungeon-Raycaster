@@ -10,7 +10,7 @@ typedef struct Map
     int width; // len adn width
     int height;
 
-    const int *data; // the dimentions of map selected
+    int *data; // the dimentions of map selected
 
     double startX; // starting position of player in each map
     double startY;
@@ -21,7 +21,7 @@ typedef struct Map
     double planeX; // Camera direction
     double planeY;
 
-
+    int total_key; // no of keys on map
 }Map;
 
 int map_count(void);

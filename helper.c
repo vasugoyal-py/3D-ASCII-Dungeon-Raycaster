@@ -6,12 +6,12 @@
 #include <stdbool.h>
 #include "map.h"
 
-#define SCREEN_WIDTH 80
-#define SCREEN_HEIGHT 24
+#define SCREEN_WIDTH 150
+#define SCREEN_HEIGHT 40
 #define speed 0.15
 #define rotSpeed 0.10
 #define loglen 500
-typedef struct GameState{
+typedef struct GameState {
     double posX; // Player pos
     double posY;
 
@@ -29,7 +29,7 @@ typedef struct GameState{
     char log[loglen]; // the characters displayed to the screen
 
     const Map *map;
-}GameState;
+} GameState;
 
 void cleanup(void);
 void enable_escape_char(void);
@@ -122,6 +122,57 @@ bool can_move(const Map *map, double newX, double newY)
     return map->data[(mapY * map->width) + mapX] == 0;
 }
 
+bool try_move(GameState *game, double newX, double newY)
+{
+    int mapX = (int)newX;
+    int mapY = (int)newY;
+
+    if (mapX < 0 || mapX >= game->map->width || mapY < 0 || mapY >= game->map->height)
+    {
+        return false;
+    }
+
+    int index = (mapY * game->map->width) + mapX;
+    int tile = game->map->data[index];
+
+    switch (tile)
+    {
+    case 0: // Empty
+        return true;
+        break;
+    case 1: // Wall
+        return false;
+        break;
+    case 3: // Key
+        game->key_count++;
+        snprintf(game->log, sizeof(game->log), "Found a Key! (Keys: %d/%d)", game->key_count, game->total_key);
+        game->map->data[index] = 0;
+        return true;
+        break;
+    case 2: // locked door
+        if (game->key_count > 0)
+        {
+            game->key_count--;
+            game->map->data[index] = 0;
+            snprintf(game->log, sizeof(game->log), "Unlocked door! (Keys left: %d/%d)", game->key_count, game->total_key);
+            return true;
+            break;
+        }
+        else
+        {
+            snprintf(game->log, sizeof(game->log), "The door is locked! You need a key.");
+            return false;
+            break;
+        }
+    case 9: // win?
+        game->won = true;
+        snprintf(game->log, sizeof(game->log), "You reached the exit! You win!");
+        return true;
+    default:
+        return false;
+        break;
+    }
+}
 
 // old render function 
 /*
@@ -222,6 +273,7 @@ void render(
         // 3. Perform DDA grid traversal
         int hit = 0;
         int side = 0; 
+        int hitTile = 0; // <-- NEW: Stores the kind of tile we hit
 
         while (!hit) {
             if (sideDistX < sideDistY) {
@@ -238,8 +290,10 @@ void render(
                 break;
             }
 
-            if (map->data[mapY * map->width + mapX] > 0) {
+            int tile = map->data[mapY * map->width + mapX];
+            if (tile > 0) {
                 hit = 1;
+                hitTile = tile; // <-- NEW: Remember the exact tile number (1, 2, 3, or 9)
             }
         }
 
@@ -261,14 +315,26 @@ void render(
         int drawEnd = lineHeight / 2 + SCREEN_HEIGHT / 2;
         if (drawEnd >= SCREEN_HEIGHT) drawEnd = SCREEN_HEIGHT - 1;
 
-        // 6. Select shading character (closer = denser glyph, Y-side = slightly dimmer)
+        // 6. Select character based on what was hit
         char wallChar;
-        if (perpWallDist < 2.0)      wallChar = '#';
-        else if (perpWallDist < 4.0) wallChar = '%';
-        else if (perpWallDist < 8.0) wallChar = '+';
-        else                          wallChar = '.';
+        if (hitTile == 2) {
+            // Locked Door (vertical bars)
+            wallChar = (side == 1) ? ':' : '|';
+        } else if (hitTile == 3) {
+            // Key (shiny pickup star)
+            wallChar = '*';
+        } else if (hitTile == 9) {
+            // Exit Goal (portal glyph)
+            wallChar = '@';
+        } else {
+            // Normal Wall (Tile 1): Shading based on distance
+            if (perpWallDist < 2.0)      wallChar = '#';
+            else if (perpWallDist < 4.0) wallChar = '%';
+            else if (perpWallDist < 8.0) wallChar = '+';
+            else                          wallChar = '.';
 
-        if (side == 1 && wallChar == '#') wallChar = '%'; 
+            if (side == 1 && wallChar == '#') wallChar = '%'; 
+        }
 
         // 7. Write ceiling, wall, and floor into screen[y][x]
         for (int y = 0; y < SCREEN_HEIGHT; y++) {

@@ -46,67 +46,77 @@ int main(void)
         .planeX = select_map->planeX,
         .planeY = select_map->planeY,
         .map = select_map,
-        .key = 0,
+        .total_key = select_map->total_key,
         .key_count = 0,
         .won = false,
         .log = " "
     };
 
     while (running != 0)
-{
-    if (kbhit())
     {
-        u_char c = getch(); // never change this u_char to any other data types it bricks the program idk why but it does so never change it
-        if (c == 'Q' || c == 'q')
+        if (kbhit())
         {
-            running = 0;
+            u_char c = getch(); // never change this u_char to any other data types it bricks the program idk why but it does so never change it
+            if (c == 'Q' || c == 'q')
+            {
+                running = 0;
+            }
+            if (c == 'w' || c == 'W')
+            {
+                double newY = game.posY + (game.dirY * speed);
+                double newX = game.posX + (game.dirX * speed);
+
+                if (try_move(&game, newX, game.posY)) game.posX = newX;
+                if (try_move(&game, game.posX, newY)) game.posY = newY;
+            }
+            if (c == 's' || c == 'S')
+            {
+                double newY = game.posY - (game.dirY * speed);
+                double newX = game.posX - (game.dirX * speed);
+
+                if (try_move(&game, newX, game.posY)) game.posX = newX;
+                if (try_move(&game, game.posX, newY)) game.posY = newY;
+            }
+            if (c == 'a' || c == 'A')
+            {
+                double oldX = game.dirX;
+                game.dirX = game.dirX * cos(rotSpeed) + game.dirY * sin(rotSpeed);
+                game.dirY = -oldX * sin(rotSpeed) + game.dirY * cos(rotSpeed);
+
+                double oldPlaneX = game.planeX;
+                game.planeX = game.planeX * cos(rotSpeed) + game.planeY * sin(rotSpeed);
+                game.planeY = -oldPlaneX * sin(rotSpeed) + game.planeY * cos(rotSpeed);
+            }
+            if (c == 'd' || c == 'D')
+            {
+
+                double oldX = game.dirX;
+                game.dirX = game.dirX * cos(rotSpeed) - game.dirY * sin(rotSpeed);
+                game.dirY = oldX * sin(rotSpeed) + game.dirY * cos(rotSpeed);
+
+                double oldPlaneX = game.planeX;
+                game.planeX = game.planeX * cos(rotSpeed) - game.planeY * sin(rotSpeed);
+                game.planeY = oldPlaneX * sin(rotSpeed) + game.planeY * cos(rotSpeed);
+                
+            }
         }
-        if (c == 'w' || c == 'W')
+
+        if (game.won)  
         {
-            double newY = game.posY + (game.dirY * speed);
-            double newX = game.posX + (game.dirX * speed);
-
-            if (can_move(game.map, newX, game.posY)) game.posX = newX;
-            if (can_move(game.map, game.posX, newY)) game.posY = newY;
+            render(screen, game.map, game.posX, game.posY, game.dirX, game.dirY, game.planeX, game.planeY);
+            present(screen);
+            system("cls");
+            printf("\n*** %s ***\n", game.log);
+            break;
         }
-        if (c == 's' || c == 'S')
-        {
-            double newY = game.posY - (game.dirY * speed);
-            double newX = game.posX - (game.dirX * speed);
 
-            if (can_move(game.map, newX, game.posY)) game.posX = newX;
-            if (can_move(game.map, game.posX, newY)) game.posY = newY;
-        }
-        if (c == 'a' || c == 'A')
-        {
-            double oldX = game.dirX;
-            game.dirX = game.dirX * cos(rotSpeed) + game.dirY * sin(rotSpeed);
-            game.dirY = -oldX * sin(rotSpeed) + game.dirY * cos(rotSpeed);
+        render(screen, game.map, game.posX, game.posY, game.dirX, game.dirY, game.planeX, game.planeY);
+        present(screen);
+        printf("Keys: %d / %d\n", game.key_count, game.total_key);
+        printf("%s\n", game.log);
 
-            double oldPlaneX = game.planeX;
-            game.planeX = game.planeX * cos(rotSpeed) + game.planeY * sin(rotSpeed);
-            game.planeY = -oldPlaneX * sin(rotSpeed) + game.planeY * cos(rotSpeed);
-        }
-        if (c == 'd' || c == 'D')
-        {
-
-            double oldX = game.dirX;
-            game.dirX = game.dirX * cos(rotSpeed) - game.dirY * sin(rotSpeed);
-            game.dirY = oldX * sin(rotSpeed) + game.dirY * cos(rotSpeed);
-
-            double oldPlaneX = game.planeX;
-            game.planeX = game.planeX * cos(rotSpeed) - game.planeY * sin(rotSpeed);
-            game.planeY = oldPlaneX * sin(rotSpeed) + game.planeY * cos(rotSpeed);
-            
-        }
+        Sleep(33);
     }
-
-    render(screen, game.map, game.posX, game.posY, game.dirX, game.dirY, game.planeX, game.planeY);
-    present(screen);
-
-    Sleep(33);
-}
     
-
     return 0;
 }

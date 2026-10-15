@@ -5,12 +5,12 @@
 #include <stdbool.h>
 #include "map.h"
 
-#define SCREEN_WIDTH 150
-#define SCREEN_HEIGHT 40
+#define SCREEN_WIDTH 130
+#define SCREEN_HEIGHT 35
 #define speed 0.15
 #define rotSpeed 0.10
 #define loglen 500
-typedef struct GameState {
+typedef struct {
     double posX; // Player pos
     double posY;
 
@@ -20,7 +20,7 @@ typedef struct GameState {
     double planeX; // Camera direction
     double planeY;
 
-    int key; // if key
+    int total_key; // total keys on map
     int key_count; // no of keys
 
     bool won; // has won?
@@ -36,5 +36,6 @@ char readoutputlast(void);
 void present(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1]);
 void render(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1], const Map *map, double posX, double posY, double dirX, double dirY, double planeX, double planeY);
 bool can_move(const Map *map, double newX, double newY);
+bool try_move(GameState *game, double newX, double newY);
 
 #endif
