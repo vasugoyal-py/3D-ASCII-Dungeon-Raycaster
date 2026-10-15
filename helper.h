@@ -26,6 +26,8 @@ typedef struct GameState{
     bool won; // has won?
 
     char log[loglen]; // the characters displayed to the screen
+
+    // add a map selction functionality here;
 }GameState;
 
 void cleanup(void);

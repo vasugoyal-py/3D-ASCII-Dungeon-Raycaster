@@ -57,9 +57,18 @@ int main(void)
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
     };
     */
-    double posX = 3.0, posY = 3.0;
-    double dirX = 0.0, dirY = -1.0;
-    double planeX = 0.66, planeY = 0.0;
+    GameState game = {
+        .posX = 3.0,
+        .posY = 3.0,
+        .dirX = 0.0,
+        .dirY = -1.0,
+        .planeX = 0.66,
+        .planeY = 0.0,
+        .key = 0,
+        .key_count = 0,
+        .won = false,
+        .log = " "
+    };
 
     char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1]; 
     
@@ -77,45 +86,45 @@ int main(void)
         }
         if (c == 'w' || c == 'W')
         {
-            double newY = posY + (dirY * speed);
-            double newX = posX + (dirX * speed);
+            double newY = game.posY + (game.dirY * speed);
+            double newX = game.posX + (game.dirX * speed);
 
-            if (can_move(map, newX, posY)) posX = newX;
-            if (can_move(map, posX, newY)) posY = newY;
+            if (can_move(map, newX, game.posY)) game.posX = newX;
+            if (can_move(map, game.posX, newY)) game.posY = newY;
         }
         if (c == 's' || c == 'S')
         {
-            double newY = posY - (dirY * speed);
-            double newX = posX - (dirX * speed);
+            double newY = game.posY - (game.dirY * speed);
+            double newX = game.posX - (game.dirX * speed);
 
-            if (can_move(map, newX, posY)) posX = newX;
-            if (can_move(map, posX, newY)) posY = newY;
+            if (can_move(map, newX, game.posY)) game.posX = newX;
+            if (can_move(map, game.posX, newY)) game.posY = newY;
         }
         if (c == 'a' || c == 'A')
         {
-            double oldX = dirX;
-            dirX = dirX * cos(rotSpeed) + dirY * sin(rotSpeed);
-            dirY = -oldX * sin(rotSpeed) + dirY * cos(rotSpeed);
+            double oldX = game.dirX;
+            game.dirX = game.dirX * cos(rotSpeed) + game.dirY * sin(rotSpeed);
+            game.dirY = -oldX * sin(rotSpeed) + game.dirY * cos(rotSpeed);
 
-            double oldPlaneX = planeX;
-            planeX = planeX * cos(rotSpeed) + planeY * sin(rotSpeed);
-            planeY = -oldPlaneX * sin(rotSpeed) + planeY * cos(rotSpeed);
+            double oldPlaneX = game.planeX;
+            game.planeX = game.planeX * cos(rotSpeed) + game.planeY * sin(rotSpeed);
+            game.planeY = -oldPlaneX * sin(rotSpeed) + game.planeY * cos(rotSpeed);
         }
         if (c == 'd' || c == 'D')
         {
 
-            double oldX = dirX;
-            dirX = dirX * cos(rotSpeed) - dirY * sin(rotSpeed);
-            dirY = oldX * sin(rotSpeed) + dirY * cos(rotSpeed);
+            double oldX = game.dirX;
+            game.dirX = game.dirX * cos(rotSpeed) - game.dirY * sin(rotSpeed);
+            game.dirY = oldX * sin(rotSpeed) + game.dirY * cos(rotSpeed);
 
-            double oldPlaneX = planeX;
-            planeX = planeX * cos(rotSpeed) - planeY * sin(rotSpeed);
-            planeY = oldPlaneX * sin(rotSpeed) + planeY * cos(rotSpeed);
+            double oldPlaneX = game.planeX;
+            game.planeX = game.planeX * cos(rotSpeed) - game.planeY * sin(rotSpeed);
+            game.planeY = oldPlaneX * sin(rotSpeed) + game.planeY * cos(rotSpeed);
             
         }
     }
 
-    render(screen, map, posX, posY, dirX, dirY, planeX, planeY);
+    render(screen, map, game.posX, game.posY, game.dirX, game.dirY, game.planeX, game.planeY);
     present(screen);
 
     Sleep(33);
