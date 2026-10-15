@@ -1,34 +1,9 @@
-/*
-This is the code of helper.h
-
-#ifndef HELPER_H
-#define HELPER_H
-
-#include <stdbool.h>
-
-#define MAP_WIDTH 16
-#define MAP_HEIGHT 16
-#define SCREEN_WIDTH 80
-#define SCREEN_HEIGHT 24
-#define speed 0.15
-#define rotSpeed 0.05
-
-void cleanup(void);
-void enable_escape_char(void);
-char readoutputlast(void);
-void present(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1]);
-void render(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1], int map[MAP_HEIGHT][MAP_WIDTH], double posX, double posY, double dirX, double dirY, double planeX, double planeY);
-bool can_move(int map[MAP_HEIGHT][MAP_WIDTH], double newX, double newY);
-
-#endif
-*/
-
-//this is helper.c
 #include "helper.h"
 
 #include <stdio.h>
 #include <windows.h>
 #include <math.h>
+#include <string.h>
 
 void cleanup(void)
 {
@@ -71,9 +46,11 @@ char readoutputlast(void)
     return ch;
 }
 
-void present(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1])
+void present(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1], const GameState *game)
 {
-    char frame[SCREEN_HEIGHT * (SCREEN_WIDTH + 1) + 16];
+    char frame[SCREEN_HEIGHT * (SCREEN_WIDTH + 1) + SCREEN_WIDTH + 128];
+    char hud[SCREEN_WIDTH + 1];
+    char status[SCREEN_WIDTH + 1];
     int pos = 0;
 
     pos += sprintf(frame + pos, "\033[H");
@@ -86,12 +63,17 @@ void present(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1])
             frame[pos++] = '\n';
         }
     }
+
+    snprintf(status, sizeof(status), "Keys: %d | Pos: (%.2f, %.2f) | %s",
+             game->keys, game->posX, game->posY, game->status_message);
+    snprintf(hud, sizeof(hud), "%-*.*s", SCREEN_WIDTH, SCREEN_WIDTH, status);
+    pos += sprintf(frame + pos, "\n%s", hud);
     frame[pos] = '\0';
 
     fputs(frame, stdout);
 }
 
-bool can_move(const int map[MAP_HEIGHT][MAP_WIDTH], double newX, double newY)
+bool try_move(GameState *game, int map[MAP_HEIGHT][MAP_WIDTH], double newX, double newY)
 {
     int mapX = (int)newX;
     int mapY = (int)newY;
@@ -101,7 +83,97 @@ bool can_move(const int map[MAP_HEIGHT][MAP_WIDTH], double newX, double newY)
         return false;
     }
 
-    return map[mapY][mapX] == 0;
+    int tile = map[mapY][mapX];
+    if (tile == 1)
+    {
+        return false;
+    }
+
+    if (tile == 2)
+    {
+        if (game->keys > 0)
+        {
+            game->keys--;
+            map[mapY][mapX] = 0;
+            snprintf(game->status_message, STATUS_MESSAGE_LENGTH, "Unlocked a door.");
+        }
+        else
+        {
+            snprintf(game->status_message, STATUS_MESSAGE_LENGTH, "Locked door. Find a key.");
+            return false;
+        }
+    }
+    else if (tile == 3)
+    {
+        game->keys++;
+        map[mapY][mapX] = 0;
+        snprintf(game->status_message, STATUS_MESSAGE_LENGTH, "Picked up a key!");
+    }
+    else if (tile == 9)
+    {
+        game->has_won = true;
+        snprintf(game->status_message, STATUS_MESSAGE_LENGTH, "You found the exit!");
+    }
+
+    game->posX = newX;
+    game->posY = newY;
+    return true;
+}
+
+void overlay_minimap(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1],
+                     const int map[MAP_HEIGHT][MAP_WIDTH],
+                     const GameState *game)
+{
+    const int minimapSize = 5;
+    const int startX = SCREEN_WIDTH - minimapSize;
+    const int startY = 0;
+    const int centerX = (int)game->posX;
+    const int centerY = (int)game->posY;
+
+    for (int my = 0; my < minimapSize; my++)
+    {
+        for (int mx = 0; mx < minimapSize; mx++)
+        {
+            int worldX = centerX + mx - 2;
+            int worldY = centerY + my - 2;
+            char cell = '#';
+
+            if (worldX >= 0 && worldX < MAP_WIDTH && worldY >= 0 && worldY < MAP_HEIGHT)
+            {
+                int tile = map[worldY][worldX];
+                if (tile == 0)
+                {
+                    cell = ' ';
+                }
+                else if (tile == 2)
+                {
+                    cell = 'D';
+                }
+                else if (tile == 3)
+                {
+                    cell = 'K';
+                }
+                else if (tile == 9)
+                {
+                    cell = 'E';
+                }
+            }
+
+            screen[startY + my][startX + mx] = cell;
+        }
+    }
+
+    char arrow = '^';
+    if (fabs(game->dirX) > fabs(game->dirY))
+    {
+        arrow = game->dirX > 0 ? '>' : '<';
+    }
+    else
+    {
+        arrow = game->dirY > 0 ? 'v' : '^';
+    }
+
+    screen[startY + 2][startX + 2] = arrow;
 }
 
 

@@ -30,7 +30,8 @@
 - **DDA-based raycasting** for wall detection — perpendicular distance avoids fisheye distortion
 - **Distance-based shading** — `#`, `%`, `+`, `.` glyphs lighten with distance, and dim on Y-side walls
 - **Flicker-free rendering** — a fixed ASCII framebuffer redrawn in place via ANSI cursor-home escapes
-- **Grid-based collision detection** via `can_move()`
+- **Interactive gameplay tiles** via `try_move()` (keys, locked doors, exit)
+- **HUD + minimap overlay** for live status and navigation
 - **Native Windows Console API** input/terminal helpers
 
 <details>
@@ -75,13 +76,13 @@
 ## 🛠️ Building
 
 ```bash
-gcc main.c helper.c -o raycaster.exe -lm
+gcc main.c helper.c -o game.exe -lm
 ```
 
 Run it:
 
 ```bash
-raycaster.exe
+game.exe
 ```
 
 ---
@@ -93,15 +94,15 @@ Defined in `helper.h`:
 | Constant | Value | Meaning |
 |---|---|---|
 | `MAP_WIDTH`, `MAP_HEIGHT` | `16` | Size of the map grid |
-| `SCREEN_WIDTH`, `SCREEN_HEIGHT` | `80`, `24` | Console viewport size |
-| `speed` | `0.15` | Movement speed per step |
-| `rotSpeed` | `0.10` | Rotation speed per step |
+| `SCREEN_WIDTH`, `SCREEN_HEIGHT` | `80`, `22` | 3D viewport size (`+1` HUD line in `present`) |
+| `SPEED` | `0.15` | Movement speed per step |
+| `ROT_SPEED` | `0.10` | Rotation speed per step |
 
 ---
 
 ## 🎮 Controls
 
-Movement/rotation and key handling live in `main.c`, using `can_move()` for collision checks and `readoutputlast()` for input.
+Movement/rotation and key handling live in `main.c`, using `try_move()` for collision checks and tile interactions.
 
 <details>
 <summary>Suggested default bindings (edit to match your <code>main.c</code>)</summary>
