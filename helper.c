@@ -1,47 +1,3 @@
-/*
-// This is the code of helper.h
-#ifndef HELPER_H
-#define HELPER_H
-
-#include <stdbool.h>
-#include "map.h"
-
-#define SCREEN_WIDTH 150
-#define SCREEN_HEIGHT 40
-#define speed 0.15
-#define rotSpeed 0.10
-#define loglen 500
-typedef struct GameState {
-    double posX; // Player pos
-    double posY;
-
-    double dirX; // Player direction
-    double dirY;
-
-    double planeX; // Camera direction
-    double planeY;
-
-    int key; // if key
-    int key_count; // no of keys
-
-    bool won; // has won?
-
-    char log[loglen]; // the characters displayed to the screen
-
-    const Map *map;
-} GameState;
-
-void cleanup(void);
-void enable_escape_char(void);
-char readoutputlast(void);
-void present(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1]);
-void render(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1], const Map *map, double posX, double posY, double dirX, double dirY, double planeX, double planeY);
-bool can_move(const Map *map, double newX, double newY);
-
-#endif
-*/
-
-//this is helper.c
 #include "helper.h"
 
 #include <stdio.h>
@@ -91,63 +47,6 @@ char readoutputlast(void)
     return ch;
 }
 
-void present(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1], int color[SCREEN_HEIGHT][SCREEN_WIDTH])
-{
-    static char frame[128 * 1024];
-    int pos = 0;
-
-    pos += sprintf(frame + pos, "\033[H");
-
-    int current_color = -1; // current color
-
-    for (int y = 0; y < SCREEN_HEIGHT; y++)
-    {
-        for (int x = 0; x < SCREEN_WIDTH; x++)
-        {
-            int cellColor = color[y][x];
-
-            if (cellColor != current_color)
-            {
-                current_color = cellColor;
-                switch (current_color)
-                {
-                    case COLOR_KEY:
-                        pos += sprintf(frame + pos, "\033[93m"); // Bright Yellow
-                        break;
-                    case COLOR_DOOR:
-                        pos += sprintf(frame + pos, "\033[38;5;130m"); // Wood Brown
-                        break;
-                    case COLOR_PORTAL:
-                        pos += sprintf(frame + pos, "\033[95m"); // Bright Purple / Magenta
-                        break;
-                    case COLOR_WALL:
-                        pos += sprintf(frame + pos, "\033[37m"); // Wall Gray / White
-                        break;
-                    case COLOR_DEFAULT:
-                    default:
-                        pos += sprintf(frame + pos, "\033[0m");  // Reset to default
-                        break;
-                }
-            }
-
-            char ch = screen[y][x];
-            switch (ch)
-            {
-                case '1': pos += sprintf(frame + pos, "█"); break;
-                case '2': pos += sprintf(frame + pos, "▓"); break;
-                case '3': pos += sprintf(frame + pos, "▒"); break;
-                case '4': pos += sprintf(frame + pos, "░"); break;
-                default:  frame[pos++] = ch; break;
-            }
-        }
-        frame[pos++] = '\n';
-    }
-
-    pos += sprintf(frame + pos, "\033[0m");
-    frame[pos] = '\0';
-
-    fputs(frame, stdout);
-}
 
 bool can_move(const Map *map, double newX, double newY)
 {
@@ -161,6 +60,7 @@ bool can_move(const Map *map, double newX, double newY)
 
     return map->data[(mapY * map->width) + mapX] == 0;
 }
+
 
 bool try_move(GameState *game, double newX, double newY)
 {
@@ -214,55 +114,122 @@ bool try_move(GameState *game, double newX, double newY)
     }
 }
 
-// old render function 
-/*
-void render(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1], int map[MAP_HEIGHT][MAP_WIDTH], double posX, double posY, double dirX, double dirY, double planeX, double planeY)
+void present(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1], int color[SCREEN_HEIGHT][SCREEN_WIDTH])
+
 {
-    (void)planeX;
-    (void)planeY;
+    static char frame[128*1024];
+    int pos = 0;
 
-    for (int y = 0; y < SCREEN_HEIGHT; y++)
+    int ret = sprintf(frame + pos, "\033[H");
+    if (ret != -1)
     {
-        for (int x = 0; x < SCREEN_WIDTH; x++)
+        pos += ret;
+    }
+    int ccolor = -1;
+
+    for(int c = 0; c < SCREEN_HEIGHT; c++)
+    {
+        for(int r = 0; r < SCREEN_WIDTH; r++)
         {
-            screen[y][x] = ' ';
+            int cellcol = color[c][r];
+            if (cellcol != ccolor)
+            {
+                ccolor = cellcol;
+                switch(ccolor)
+                {
+                    case COLOR_KEY:
+                        ret = sprintf(frame + pos, "\033[93m");
+                        if (ret != -1)
+                        {
+                            pos += ret;
+                        }
+                        break;
+
+                    case COLOR_DOOR:
+                        ret = sprintf(frame + pos, "\033[38;5;130m");
+                        if (ret != -1)
+                        {
+                            pos += ret;
+                        }
+                        break;
+
+                    case COLOR_PORTAL:
+                        ret = sprintf(frame + pos, "\033[95m");
+                        if (ret != -1)
+                        {
+                            pos += ret;
+                        }
+                        break;
+
+                    case COLOR_WALL:
+                        ret = sprintf(frame + pos, "\033[37m");
+                        if (ret != -1)
+                        {
+                            pos += ret;
+                        }
+                        break;
+
+                    case COLOR_DEFAULT:
+                    default:
+                        ret = sprintf(frame + pos, "\033[0m");
+                        if (ret != -1)
+                        {
+                            pos += ret;
+                        }
+                        break;
+                }   
+            }
+
+            char ch = screen[c][r];
+            switch (ch)
+            {
+                case '1':
+                    ret = sprintf(frame + pos, "█"); 
+                    if (ret != -1)
+                    {
+                        pos += ret;
+                    }
+                    break;
+                case '2': 
+                    ret = sprintf(frame + pos, "▓"); 
+                    if (ret != -1)
+                    {
+                        pos += ret;
+                    }
+                    break;
+                case '3': 
+                    ret = sprintf(frame + pos, "▒");
+                    if (ret != -1)
+                    {
+                        pos += ret;
+                    }
+                    break;
+                case '4':
+                    ret = sprintf(frame + pos, "░");
+                    if (ret != -1)
+                    {
+                        pos += ret;
+                    }
+                    break;
+                default:
+                    frame[pos++] = ch; 
+                    break;
+            }
         }
-        screen[y][SCREEN_WIDTH] = '\0'; 
+
+        frame[pos++] = '\n';
+    
     }
 
-    for (int y = 0; y < MAP_HEIGHT; y++)
+    ret = sprintf(frame + pos, "\033[0m");
+    if (ret != -1)
     {
-        for (int x = 0; x < MAP_WIDTH; x++)
-        {
-            screen[y][x] = map[y][x] ? '#' : '.';
-        }
+        pos += ret; 
     }
-
-    int playerScreenX = (int)posX;
-    int playerScreenY = (int)posY;
-    screen[playerScreenY][playerScreenX] = 'P';
-
-    int arrowX = playerScreenX;
-    int arrowY = playerScreenY;
-    char arrow = '^';
-
-    if (fabs(dirX) > fabs(dirY))
-    {
-        arrowX += dirX > 0 ? 1 : -1;
-        arrow = dirX > 0 ? '>' : '<';
-    }
-    else
-    {
-        arrowY += dirY > 0 ? 1 : -1;
-        arrow = dirY > 0 ? 'v' : '^';
-    }
-
-    if (arrowX >= 0 && arrowX < SCREEN_WIDTH && arrowY >= 0 && arrowY < SCREEN_HEIGHT)
-    {
-        screen[arrowY][arrowX] = arrow;
-    }
+    frame[pos] = '\0';
+    fputs(frame, stdout);
 }
-*/
+
 
 void render(
     char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1],
@@ -272,133 +239,180 @@ void render(
     double dirX, double dirY,
     double planeX, double planeY)
 {
-    // Step A: Set null terminators for every row
-    for (int y = 0; y < SCREEN_HEIGHT; y++) {
-        screen[y][SCREEN_WIDTH] = '\0';
-    }
 
-    // Step B: Cast a ray for each vertical column
-    for (int x = 0; x < SCREEN_WIDTH; x++)
+    for (int i = 0; i < SCREEN_HEIGHT; i++)
     {
-        // 1. Calculate ray position and direction
-        double cameraX = 2.0 * x / (double)SCREEN_WIDTH - 1.0; // -1 (left) .. 1 (right)
-        double rayDirX = dirX + planeX * cameraX;
-        double rayDirY = dirY + planeY * cameraX;
-
+        screen[i][SCREEN_WIDTH] = '\0';
+    }
+    
+    for(int c = 0; c < SCREEN_WIDTH; c++)
+    {
+        // calc ray pos and direc
+        float cameraxX = (2 * c / (double)SCREEN_WIDTH) - 1.0;
+        double rayDirX = dirX + (cameraxX * planeX);
+        double rayDirY = dirY + (cameraxX * planeY);
+        
         int mapX = (int)posX;
         int mapY = (int)posY;
 
-        // 2. Set up DDA step parameters
+        // Digital Differential Analysis set
+
         double deltaDistX = (rayDirX == 0) ? 1e30 : fabs(1.0 / rayDirX);
         double deltaDistY = (rayDirY == 0) ? 1e30 : fabs(1.0 / rayDirY);
 
         int stepX, stepY;
-        double sideDistX, sideDistY;
+        double sideX, sideY;
 
-        if (rayDirX < 0) {
+        if (rayDirX < 0) 
+        {
             stepX = -1;
-            sideDistX = (posX - mapX) * deltaDistX;
-        } else {
+            sideX = (posX - mapX) * deltaDistX;
+        }
+        else 
+        {
             stepX = 1;
-            sideDistX = (mapX + 1.0 - posX) * deltaDistX;
+            sideX = (mapX + 1.0 - posX) * deltaDistX;
         }
 
-        if (rayDirY < 0) {
+        if (rayDirY < 0)
+        {
             stepY = -1;
-            sideDistY = (posY - mapY) * deltaDistY;
-        } else {
-            stepY = 1;
-            sideDistY = (mapY + 1.0 - posY) * deltaDistY;
+            sideY = (posY - mapY) * deltaDistY;
         }
-
-        // 3. Perform DDA grid traversal
+        else
+        {
+            stepY = 1;
+            sideY = (mapY + 1.0 - posY) * deltaDistY;
+        }
+        // init dda
         int hit = 0;
-        int side = 0; 
-        int hitTile = 0;
-
-        while (!hit) {
-            if (sideDistX < sideDistY) {
-                sideDistX += deltaDistX;
+        int side = 0;
+        int hitTile= 0;
+    
+        while (!hit)
+        {
+            if (sideX < sideY) 
+            {
+                sideX += deltaDistX;
                 mapX += stepX;
                 side = 0;
-            } else {
-                sideDistY += deltaDistY;
+            }
+            else 
+            {
+                sideY += deltaDistY;
                 mapY += stepY;
                 side = 1;
             }
-            if (mapX < 0 || mapX >= map->width || mapY < 0 || mapY >= map->height) {
-                hit = 1; 
+            if (mapX < 0 || mapX >= map->width || mapY < 0 || mapY >= map->height)
+            {
+                hit = 1;
                 break;
             }
 
-            int tile = map->data[mapY * map->width + mapX];
-            if (tile > 0) {
+            int tile = map->data[(mapY * map->width) + mapX];
+            if (tile > 0)
+            {
                 hit = 1;
                 hitTile = tile;
             }
+        }  
+
+        // wall dist form player
+        double wallDist;
+        if (side == 0) 
+        {
+            wallDist = (sideX - deltaDistX);
+        }
+        else
+        {
+            wallDist = (sideY - deltaDistY);
         }
 
-        // 4. Calculate perpendicular distance
-        double perpWallDist;
-        if (side == 0) {
-            perpWallDist = (sideDistX - deltaDistX);
-        } else {
-            perpWallDist = (sideDistY - deltaDistY);
+        if (wallDist < 0.0001)
+        {
+            wallDist = 0.0001;
         }
-        if (perpWallDist < 0.0001) perpWallDist = 0.0001;
 
-        // 5. Calculate wall column height and draw boundaries
-        int lineHeight = (int)(SCREEN_HEIGHT / perpWallDist);
+        // length of all
 
-        int drawStart = -lineHeight / 2 + SCREEN_HEIGHT / 2;
-        if (drawStart < 0) drawStart = 0;
+        int lineHeight =  (int)(SCREEN_HEIGHT / wallDist);
 
-        int drawEnd = lineHeight / 2 + SCREEN_HEIGHT / 2;
-        if (drawEnd >= SCREEN_HEIGHT) drawEnd = SCREEN_HEIGHT - 1;
+        int drawStart = -(lineHeight / 2) + (SCREEN_HEIGHT / 2);
+        if (drawStart < 0)
+        {
+            drawStart = 0;
+        }
 
-        // 6. Select character based on what was hit
+        int drawEnd = (lineHeight / 2) + (SCREEN_HEIGHT / 2);
+        if (drawEnd >= SCREEN_HEIGHT)
+        {
+            drawEnd = SCREEN_HEIGHT - 1;
+        }
+
+        // what is there
         char wallChar;
-        int wallColor = COLOR_WALL;
+        int wallColo = COLOR_WALL;
 
-        if (hitTile == 2) {
+        if (hitTile == 2) 
+        {
             // Locked Door
             wallChar = (side == 1) ? ':' : '|';
-            wallColor = COLOR_DOOR;
-        } else if (hitTile == 3) {
+            wallColo = COLOR_DOOR;
+        }
+        else if (hitTile == 3) 
+        {
             // Key
             wallChar = '*';
-            wallColor = COLOR_KEY;
-        } else if (hitTile == 9) {
+            wallColo = COLOR_KEY;
+        }
+        else if (hitTile == 9) 
+        {
             // Exit Goal
             wallChar = '@';
-            wallColor = COLOR_PORTAL;
-        } else {
-            // Normal Wall: Distance-based shading tokens
-            if (perpWallDist < 2.0)      wallChar = '1'; // █
-            else if (perpWallDist < 4.0) wallChar = '2'; // ▓
-            else if (perpWallDist < 8.0) wallChar = '3'; // ▒
-            else                          wallChar = '4'; // ░
+            wallColo = COLOR_PORTAL;
+        }
+        else
+        {
+            if (wallDist < 2.0)
+            {
+                wallChar = '1'; // █
+            }
+            else if (wallDist < 4.0)
+            {   
+                wallChar = '2'; // ▓
+            }
+            else if (wallDist < 8.0) 
+            {
+                wallChar = '3'; // ▒
+            }
+            else
+            {
+                wallChar = '4'; // ░
+            }
 
-            // Shadow on Y-side walls for 3D depth
             if (side == 1) {
                 if (wallChar == '1') wallChar = '2';
                 else if (wallChar == '2') wallChar = '3';
                 else if (wallChar == '3') wallChar = '4';
             }
-            wallColor = COLOR_WALL;
+            wallColo = COLOR_WALL;
         }
-
-        // Step 7: Fill screen and color buffers
-        for (int y = 0; y < SCREEN_HEIGHT; y++) {
-            if (y < drawStart) {
-                screen[y][x] = ' ';
-                color[y][x] = COLOR_DEFAULT;
-            } else if (y <= drawEnd) {
-                screen[y][x] = wallChar;
-                color[y][x] = wallColor;
-            } else {
-                screen[y][x] = '.';
-                color[y][x] = COLOR_DEFAULT;
+        // make col
+        for (int r = 0; r < SCREEN_HEIGHT; r++) {
+            if (r < drawStart)
+            {
+                screen[r][c] = ' ';
+                color[r][c] = COLOR_DEFAULT;
+            } 
+            else if(r <= drawEnd)
+            {
+                screen[r][c] = wallChar;
+                color[r][c] = wallColo;
+            }
+            else
+            {
+                screen[r][c] = '.';
+                color[r][c] = COLOR_DEFAULT;
             }
         }
     }

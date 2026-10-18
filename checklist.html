@@ -32,7 +32,7 @@ header{padding:1rem 0 1.5rem}
 h1{font:700 clamp(1.6rem,5vw,2.4rem)/1.1 var(--head);margin:0 0 .4rem;letter-spacing:-.02em}
 .sub{color:var(--muted);margin:0}
 .top{position:sticky;top:0;z-index:5;background:var(--bg);padding:.75rem 0;border-bottom:1px solid var(--line)}
-.map{display:grid;grid-template-columns:repeat(15,1fr);gap:3px}
+.map{display:grid;grid-template-columns:repeat(20,1fr);gap:3px}
 .tile{aspect-ratio:1;min-width:0;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;font:700 .65rem var(--head);color:var(--muted);text-decoration:none;border-radius:2px}
 .tile.done{background:var(--done);border-color:var(--done);color:#fff}
 .tile:focus-visible,button:focus-visible,input:focus-visible+span{outline:3px solid var(--accent);outline-offset:2px}
@@ -59,7 +59,7 @@ li input:checked~.txt{color:var(--muted);text-decoration:line-through;text-decor
 li ul{margin:0 0 0 1.95rem}
 pre{background:var(--code);border:1px solid var(--line);border-radius:4px;padding:.7rem .9rem;margin:.5rem 0 .3rem 1.95rem;overflow-x:auto;font:500 .82rem/1.5 var(--head)}
 code{font-family:var(--head);font-size:.88em;background:var(--code);padding:.05em .3em;border-radius:3px}
-@media (max-width:560px){.map{grid-template-columns:repeat(8,1fr)}}
+@media (max-width:560px){.map{grid-template-columns:repeat(10,1fr)}}
 @media print{.top .tools{display:none}.top{position:static}}
 </style>
 </head>
@@ -97,6 +97,18 @@ const PHASES=[
   "Implement overlay_minimap() in helper.c",
   "Render a 5x5 area around the player in the top-right corner of screen[][]",
   "Render the orientation arrow (^, >, v, <) based on dirX and dirY"]},
+ {t:"Held-key WASD input (no re-pressing)",l:"Controls",n:"3.5",items:[
+  "Replace _kbhit()/_getch() with key-state polling for W, A, S, D (e.g. GetAsyncKeyState on Windows) and keep Q for quit",
+  "Keep a per-frame table of which keys are currently held, and apply movement from that table every frame",
+  "Support combos: hold W, press A to turn while still moving, release A and W keeps going without pressing it again",
+  "Remove the keyboard repeat delay so movement starts instantly and never stutters",
+  "Test: W then A then release A (W continues), W+S cancel out, and Q still exits and restores the cursor"]},
+ {t:"Acceleration and top speed",l:"Gameplay",n:"3.7",items:[
+  "Add a current speed value to GameState, plus constants ACCEL, MAX_SPEED and DECEL",
+  "Increase speed each frame while forward or backward is held, capped at MAX_SPEED",
+  "Slow down smoothly to 0 when the key is released",
+  "Use frame time (delta time) so acceleration feels the same at any frame rate",
+  "Reset speed to 0 on hitting a wall or locked door, then tune the values and optionally show speed in the HUD"]},
  {t:"Heads-up display (HUD) and victory screen",l:"UI",items:[
   "Set SCREEN_HEIGHT to 22 lines to leave room for the status bar",
   "Print stats in present(): keys collected, coordinates, action log",
@@ -106,6 +118,24 @@ const PHASES=[
   "Place at least 2 keys in dead ends or hidden corridors",
   "Place 2 locked doors guarding the path to the exit",
   "Verify there are no unintended shortcuts or impassable soft-locks"]},
+ {t:"Sound effects and background audio",l:"Audio",n:"5.1",items:[
+  "Create audio.h and audio.c with play_sound(id), sound IDs and a start/stop for the background loop",
+  "Pickup sound when collecting a key (tile 3)",
+  "Sounds for the other objects: door unlock, blocked locked door, exit and victory, optional footsteps",
+  "Background music or ambient loop that starts at launch and stops cleanly on exit (Q)",
+  "Keep sound files in a sounds/ folder loaded by relative path, add a mute toggle (M), and add any needed link flag (e.g. -lwinmm on Windows)"]},
+ {t:"Level order (levels 1 to 3, or up to 5)",l:"Level design",n:"5.2",items:[
+  "Add a level order list in map.c using the Map struct from Card 1.5 (3 levels, up to 5 if time allows)",
+  "Give each level its own start position, keys, locked doors and exit",
+  "Make the exit tile (9) load the next level, reset the player position and apply your chosen rule for carried-over keys",
+  "Show Level X of N in the HUD and a level-complete message between levels",
+  "Show the victory screen only after the final level, with difficulty ramping up from level 1"]},
+ {t:"Linux compatibility",l:"Portability",n:"5.3",items:[
+  "Wrap platform code in #ifdef _WIN32 / #else so conio.h and windows.h are only used on Windows",
+  "Linux input: termios raw mode with non-blocking reads (terminals do not report key release, so treat a key as held for a short timeout after its last repeat)",
+  "Replace Sleep() with usleep() or nanosleep(), and keep ANSI cursor and screen codes shared",
+  "Add a Linux audio backend behind audio.h (e.g. SDL_mixer, or calling aplay) and restore terminal settings with tcsetattr on exit",
+  ["Build and test on Linux (WSL or CS50 codespace) with no .exe:","gcc main.c helper.c map.c audio.c -o game -lm"]]},
  {t:"Controls and playtesting",l:"Quality assurance",items:[
   "Test turning speed (ROT_SPEED) and walk speed (SPEED) for smooth movement",
   "Test collision against all wall angles (no clipping through corners)",
@@ -142,7 +172,9 @@ const PHASES=[
    "main.c: game loop, keyboard input via _kbhit() and _getch(), victory handling",
    "helper.c: raycasting math, mini-map rasterization, ANSI screen presentation",
    "helper.h: game state definitions and function prototypes",
-   "map.c and map.h: map definitions of different shapes and sizes, and map selection"]],
+   "map.c and map.h: map definitions of different shapes and sizes, level order and map selection",
+   "audio.c and audio.h: sound effects and background audio",
+   "Platform code for Windows and Linux (input, timing, audio)"]],
   ["Design decisions and challenges:",[
    "Why double-buffered ANSI escape codes (\\033[H) eliminate screen flicker",
    "How you solved the getch() unsigned char issue",
@@ -153,7 +185,7 @@ const PHASES=[
   "Submit project title, GitHub username and YouTube video URL"]},
  {t:"Execute submit50",l:"Terminal",items:[
   "Open a terminal inside your project directory",
-  "Ensure only main.c, helper.c, helper.h, map.c, map.h and README.md are present",
+  "Ensure only your source files and assets (main.c, helper.c, helper.h, map.c, map.h, audio.c, audio.h, sounds/, README.md) are present",
   ["Run:","submit50 cs50/problems/2026/x/project"],
   "Confirm submission completes with 100% green checkmarks"]},
  {t:"Claim your CS50 certificate",l:"Graduation",items:[
@@ -162,7 +194,7 @@ const PHASES=[
   "Confirm the green banner appears showing Course Completed",
   "Click the link at the top to download your free CS50x certificate"]}]}
 ];
-const KEY="cs50-dungeon-checklist-v2";
+const KEY="cs50-dungeon-checklist-v3";
 let saved={};
 try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
 const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(e){}};
