@@ -35,7 +35,8 @@ typedef enum {
     COLOR_WALL,    // White / Gray
     COLOR_DOOR,    // Brown
     COLOR_KEY,     // Yellow
-    COLOR_PORTAL   // Purple
+    COLOR_PORTAL,   // Purple
+    COLOR_PLAYER    // Green
 } Color;
 
 void cleanup(void);
@@ -43,7 +44,7 @@ void enable_escape_char(void);
 char readoutputlast(void);
 void present(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1], int color[SCREEN_HEIGHT][SCREEN_WIDTH]);
 void render(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1], int color[SCREEN_HEIGHT][SCREEN_WIDTH], const Map *map, double posX, double posY, double dirX, double dirY, double planeX, double planeY);
-bool can_move(const Map *map, double newX, double newY);
 bool try_move(GameState *game, double newX, double newY);
+void overlay_minimap(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1], int color[SCREEN_HEIGHT][SCREEN_WIDTH], GameState *game);
 
 #endif

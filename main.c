@@ -112,6 +112,7 @@ int main(void)
         }
 
         render(screen, color, game.map, game.posX, game.posY, game.dirX, game.dirY, game.planeX, game.planeY);
+        overlay_minimap(screen, color, &game);
         present(screen, color);
         printf("Keys: %d / %d\n", game.key_count, game.total_key);
         printf("%s\n", game.log);

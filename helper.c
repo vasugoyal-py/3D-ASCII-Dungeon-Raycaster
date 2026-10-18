@@ -47,21 +47,6 @@ char readoutputlast(void)
     return ch;
 }
 
-
-bool can_move(const Map *map, double newX, double newY)
-{
-    int mapX = (int)newX;
-    int mapY = (int)newY;
-
-    if (mapX < 0 || mapX >= map->width || mapY < 0 || mapY >= map->height)
-    {
-        return false;
-    }
-
-    return map->data[(mapY * map->width) + mapX] == 0;
-}
-
-
 bool try_move(GameState *game, double newX, double newY)
 {
     int mapX = (int)newX;
@@ -169,6 +154,14 @@ void present(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1], int color[SCREEN_HEIG
                         }
                         break;
 
+                    case COLOR_PLAYER:
+                        ret = sprintf(frame + pos, "\033[92m");
+                        if (ret != -1)
+                        {
+                            pos += ret;
+                        }
+                        break;
+
                     case COLOR_DEFAULT:
                     default:
                         ret = sprintf(frame + pos, "\033[0m");
@@ -238,6 +231,7 @@ void render(
     double posX, double posY,
     double dirX, double dirY,
     double planeX, double planeY)
+
 {
 
     for (int i = 0; i < SCREEN_HEIGHT; i++)
@@ -416,4 +410,124 @@ void render(
             }
         }
     }
+}
+
+
+void overlay_minimap(char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1], int color[SCREEN_HEIGHT][SCREEN_WIDTH], GameState *game)
+{
+    const int START_ROW = 1;
+    const int START_COL = SCREEN_WIDTH - 16;
+
+    screen[START_ROW][START_COL] = '+';
+    color[START_ROW][START_COL] = COLOR_WALL;
+    for (int i = 1; i <= 12; i++)
+    {
+        screen[START_ROW][START_COL + i] = '-';
+        color[START_ROW][START_COL + i] = COLOR_WALL;
+    }
+
+    screen[START_ROW][START_COL + 13] = '+';
+    color[START_ROW][START_COL + 13] = COLOR_WALL;
+
+    int pX = (int)game->posX;
+    int pY = (int)game->posY;
+
+    for (int dy = -2; dy <= 2; dy++)
+    {
+        int r = START_ROW + 1 + (dy + 2);
+
+        screen[r][START_COL] = '|';
+        color[r][START_COL] = COLOR_WALL;
+        screen[r][START_COL + 1] = ' ';
+        color[r][START_COL + 1] = COLOR_DEFAULT;
+
+        for (int dx = -2; dx <= 2; dx++)
+        {
+            int mapX = pX + dx;
+            int mapY = pY + dy;
+
+            char ch1 = ' ';
+            char ch2 = ' ';
+            int col = COLOR_DEFAULT;
+
+            if (dx == 0 && dy == 0)
+            {
+                if (fabs(game->dirX) > fabs(game->dirY))
+                {
+                    ch1 = (game->dirX > 0) ? '>' : '<';
+                }
+                else
+                {
+                    ch1 = (game->dirY > 0) ? 'v' : '^';
+                }
+                ch2 = ' ';
+                col = COLOR_PLAYER;
+            }
+            else if (mapX < 0 || mapX >= game->map->width || mapY < 0 || mapY >= game->map->height)
+            {
+                ch1 = '1';
+                ch2 = '1';
+                col = COLOR_WALL;
+            }
+            else
+            {
+                int tile = game->map->data[(mapY * game->map->width) + mapX];
+                switch (tile)
+                {
+                    case 1: // wall
+                        ch1 = '1';
+                        ch2 = '1';
+                        col = COLOR_WALL;
+                        break;
+
+                    case 2: // door
+                        ch1 = '[';
+                        ch2 = ']';
+                        col = COLOR_DOOR;
+                        break;
+
+                    case 3: // key
+                        ch1 = '*';
+                        ch2 = '*';
+                        col = COLOR_KEY;
+                        break;
+                        
+                    case 9: // exit
+                        ch1 = '@';
+                        ch2 = '@';
+                        col = COLOR_PORTAL;
+                        break;
+
+                    case 0: // empty
+                    default:
+                        ch1 = ' ';
+                        ch2 = ' ';
+                        col = COLOR_DEFAULT;
+                        break;
+                }
+            }
+
+            int c = START_COL + 2 + (dx + 2) * 2;
+            screen[r][c] = ch1;
+            color[r][c] = col;
+            screen[r][c + 1] = ch2;
+            color[r][c + 1] = col;
+        }
+
+        screen[r][START_COL + 12] = ' ';
+        color[r][START_COL + 12] = COLOR_DEFAULT;
+        screen[r][START_COL + 13] = '|';
+        color[r][START_COL + 13] = COLOR_WALL;
+    }
+
+    int botRow = START_ROW + 6;
+    screen[botRow][START_COL] = '+';
+    color[botRow][START_COL] = COLOR_WALL;
+    for (int i = 1; i <= 12; i++)
+    {
+        screen[botRow][START_COL + i] = '-';
+        color[botRow][START_COL + i] = COLOR_WALL;
+    }
+    screen[botRow][START_COL + 13] = '+';
+    color[botRow][START_COL + 13] = COLOR_WALL;
 }
